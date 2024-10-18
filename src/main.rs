@@ -1,31 +1,31 @@
 mod entities;
+mod dao;
 
-use sea_orm::{Database, DbErr, EntityTrait, QueryTrait}; // 确保导入 EntityTrait 和 QueryTrait
-const DATABASE_URL: &str = "sqlite:///Users/ccc/p2159.sqllite";
-use crate::entities::users::{Entity as UsersEntity, Model as UsersModel}; // Entity 和 Model 导入
-use crate::entities::teachers::{Entity as TeacherEntity, Model as TeacherModel}; // Entity 和
-use crate::entities::prelude::{*};
-// Model 导入
+use sea_orm::{DbErr};
+use crate::dao::{*};
+use crate::entities::{*};
 
 // 使用 tokio::main 来启动异步运行时
 #[tokio::main]
 async fn main() -> Result<(), DbErr> {
-    // 连接数据库
-    let db = Database::connect(DATABASE_URL).await?;
-
-    // 查询所有 users 表中的记录
-    let _list_users: Vec<UsersModel> = Users::find().all(&db).await?;
-    // for user in list_users.iter() {
-    //     println!("{:?\n\n}", user);
-    //     println!("");
-    // }
-
-    // 查询所有 teachers 表中的记录
-    let list_teachers: Vec<TeacherModel> = Teachers::find().all(&db).await?;
-    for teacher in list_teachers.iter() {
-        println!("{:?\n\n}", teacher);
+    let list_teacher: Vec<teachers::Model> = teacher_dao::list().await?;
+    for teacher in list_teacher.iter() {
+        println!("{:?} : {:?}", teacher.name, teacher.teacher_id);
         println!("");
     }
+    println!("teacher len: {:?}", list_teacher.len());
+
+    let list_user: Vec<users::Model> = user_dao::list().await?;
+    println!("user len: {:?}", list_user.len());
+
+    let list_order: Vec<orders::Model> = order_dao::list().await?;
+    println!("order len: {:?}", list_order.len());
+
+    let list_course: Vec<courses::Model> = course_dao::list().await?;
+    println!("course len: {:?}", list_course.len());
+
+    let list_schedule: Vec<schedules::Model> = schedule_dao::list().await?;
+    println!("schedule len: {:?}", list_schedule.len());
 
     Ok(())
 }
