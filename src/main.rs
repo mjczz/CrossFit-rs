@@ -64,7 +64,6 @@ async fn main() -> Result<(), DbErr> {
 }
 
 async fn list_user() -> (StatusCode, Json<UsersModel>) {
-    // let list_user: Vec<users::Model> = user_dao::list().await;
     let res = user_dao::list().await;
     if res.is_ok() {
         let list = res.unwrap();
@@ -78,14 +77,14 @@ async fn list_user() -> (StatusCode, Json<UsersModel>) {
             data.push(d.into())
         }
         return (StatusCode::OK, Json(UsersModel {
-            data: data
+            count: data.len(),
+            data: data,
         }));
     };
 
-    let res = UsersModel {
-        data: vec![],
-    };
-    (StatusCode::BAD_REQUEST, Json(res))
+    (StatusCode::BAD_REQUEST, Json(UsersModel {
+        ..Default::default()
+    }))
 }
 
 // basic handler that responds with a static string
@@ -122,8 +121,9 @@ struct User {
     username: String,
 }
 
-#[derive(Serialize)]
+#[derive(Serialize, Default)]
 struct UsersModel {
+    count: usize,
     data: Vec<UserData>,
 }
 
