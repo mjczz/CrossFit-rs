@@ -30,7 +30,7 @@ async fn main() -> Result<(), DbErr> {
     // }
     // println!("teacher len: {:?}", list_teacher.len());
 
-    let list_order: Vec<orders::Model> = order_dao::list().await?;
+    let list_order: Vec<orders::Model> = order_dao::list(6690, 1, 10).await?;
     println!("order len: {:?}", list_order.len());
 
     let list_course: Vec<courses::Model> = course_dao::list().await?;

@@ -5,10 +5,22 @@ use serde::{Deserialize, Serialize};
 use crate::common_fields;
 use crate::dao::{order_dao as dao};
 use crate::entities::orders::Model;
+use crate::route::handler::users::CreateUser;
+use axum::{extract::Query, routing::get, Router};
+
+
+#[derive(Deserialize)]
+pub struct SearchOrdersReq {
+    shop_id: i32,
+    page: u64,
+    page_size: u64,
+}
 
 common_fields!(ListRes, ApiData, count);
-pub async fn list() -> (StatusCode, Json<ListRes>) {
-    let res = dao::list().await;
+pub async fn list(
+    Query(params): Query<SearchOrdersReq>
+) -> (StatusCode, Json<ListRes>) {
+    let res = dao::list(params.shop_id, params.page, params.page_size).await;
     if res.is_ok() {
         let list = res.unwrap();
         tracing::info!("Database query success: {:?}", list.len());
