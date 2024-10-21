@@ -1,4 +1,4 @@
-mod handler;
+pub(crate) mod handler;
 
 use axum::Router;
 use axum::routing::{get, post};
