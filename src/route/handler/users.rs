@@ -1,6 +1,7 @@
 use axum::Json;
 use http::StatusCode;
 use serde::{Deserialize, Serialize};
+use crate::common_fields;
 use crate::dao::{user_dao};
 use crate::entities::users::Model;
 
@@ -14,7 +15,6 @@ pub async fn create_user(
         id: 1337,
         username: payload.username,
     };
-
     // this will be converted into a JSON response
     // with a status code of `201 Created`
     (StatusCode::CREATED, Json(user))
@@ -33,39 +33,30 @@ pub struct User {
     username: String,
 }
 
-
-pub async fn list_user() -> (StatusCode, Json<UsersRes>) {
-    let res = user_dao::list().await;
-    if res.is_ok() {
-        let list = res.unwrap();
-        println!("user len: {:?}", list.len());
-        // this will be converted into a JSON response
-        // with a status code of `201 Created`
-        let mut data: Vec<UserData> = vec![];
-        for d in list.iter() {
-            // 使用 From trait 进行转换
-            // let user_data: UserData = UserData::from(d.clone());
-            data.push(d.into())
+common_fields!(ListRes, ApiData, count);
+pub async fn list() -> (StatusCode, Json<ListRes>) {
+    match user_dao::list().await {
+        Ok(list) => {
+            tracing::info!("Database query success: {:?}", list.len());
+            let mut data: Vec<ApiData> = vec![];
+            for d in list.iter() {
+                // 使用 From trait 进行转换
+                // let user_data: ApiData = ApiData::from(d.clone());
+                data.push(d.into())
+            }
+             (StatusCode::OK, Json(ListRes::new(data)))
         }
-        return (StatusCode::OK, Json(UsersRes {
-            count: data.len(),
-            data: data,
-        }));
-    };
-
-    (StatusCode::BAD_REQUEST, Json(UsersRes {
-        ..Default::default()
-    }))
-}
-
-#[derive(Serialize, Default)]
-pub struct UsersRes {
-    count: usize,
-    data: Vec<UserData>,
+        Err(e) => {
+            tracing::error!("Database query failed: {:?}", e);
+            (StatusCode::BAD_REQUEST, Json(ListRes {
+                ..Default::default()
+            }))
+        }
+    }
 }
 
 #[derive(Default, Serialize)]
-pub struct UserData {
+pub struct ApiData {
     pub id: i64,
     pub user_id: i32,
     pub shop_name: String,
@@ -80,14 +71,14 @@ pub struct UserData {
     pub last_course_time: i32,
 }
 
-// 从 &Model（引用）转换为 UserData：
+// 从 &Model（引用）转换为 ApiData：
 // 这个实现可以避免不必要的拷贝，适用于不需要转移所有权的场景。
 // 引用版本（From<&Model>）：适用于你想保留 Model 的场景，因为它只借用了 Model 的数据，而不会消耗所有权。这种方式避免了不必要的内存分配和数据拷贝，尤其在需要遍历或只读场景下更高效。
 // 如果你有一个 &Model，可以使用引用实现：
-// let user_data: UserData = (&model).into();
-impl From<&Model> for UserData {
+// let user_data: ApiData = (&model).into();
+impl From<&Model> for ApiData {
     fn from(d: &Model) -> Self {
-        UserData {
+        ApiData {
             id: d.id,
             user_id: d.user_id,
             shop_name: d.shop_name.clone(),
@@ -104,14 +95,14 @@ impl From<&Model> for UserData {
     }
 }
 
-// 从 Model（所有权）转换为 UserData：
+// 从 Model（所有权）转换为 ApiData：
 // 这个实现直接消耗 Model 的所有权，适用于你不再需要 Model 的场景。
-// 所有权版本（From<Model>）：适用于你不再需要 Model，希望消耗它来创建 UserData。这种方式可以避免再复制数据，比如调用 clone()。
+// 所有权版本（From<Model>）：适用于你不再需要 Model，希望消耗它来创建 ApiData。这种方式可以避免再复制数据，比如调用 clone()。
 // 如果你有一个 Model 实例，想直接转移所有权，可以使用所有权实现：
-// let user_data: UserData = model.into();
-impl From<Model> for UserData {
+// let user_data: ApiData = model.into();
+impl From<Model> for ApiData {
     fn from(d: Model) -> Self {
-        UserData {
+        ApiData {
             id: d.id,
             user_id: d.user_id,
             shop_name: d.shop_name,  // 这里不再需要 clone，直接使用 d 的所有权

@@ -12,5 +12,6 @@ serde = { version = "1.0.210", features = ["derive"] }  # tokio 的全功能支�
 axum = { version = "0.7.5" }
 tracing-subscriber = "0.3.18"
 clap = "2.33.3"
+tracing = "0.1.40"
 
 

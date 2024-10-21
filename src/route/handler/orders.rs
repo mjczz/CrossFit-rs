@@ -2,39 +2,29 @@ use axum::Json;
 use http::StatusCode;
 use sea_orm::prelude::Decimal;
 use serde::{Deserialize, Serialize};
+use crate::common_fields;
 use crate::dao::{order_dao as dao};
 use crate::entities::orders::Model;
 
-pub async fn list_order() -> (StatusCode, Json<OrderRes>) {
+common_fields!(ListRes, ApiData, count);
+pub async fn list() -> (StatusCode, Json<ListRes>) {
     let res = dao::list().await;
     if res.is_ok() {
         let list = res.unwrap();
-        println!("user len: {:?}", list.len());
-        // this will be converted into a JSON response
-        // with a status code of `201 Created`
-        let mut data: Vec<OrderData> = vec![];
+        tracing::info!("Database query success: {:?}", list.len());
+        let mut data: Vec<ApiData> = vec![];
         for d in list.iter() {
             data.push(d.into())
         }
-        return (StatusCode::OK, Json(OrderRes {
-            count: data.len(),
-            data: data,
-        }));
+        return (StatusCode::OK, Json(ListRes::new(data)));
     };
-
-    (StatusCode::BAD_REQUEST, Json(OrderRes {
+    (StatusCode::BAD_REQUEST, Json(ListRes {
         ..Default::default()
     }))
 }
 
-#[derive(Serialize, Default)]
-pub struct OrderRes {
-    count: usize,
-    data: Vec<OrderData>,
-}
-
 #[derive(Default, Serialize)]
-pub struct OrderData {
+pub struct ApiData {
     pub id: i64,
     pub order_id: i32,
     pub schedule_id: i32,
@@ -73,9 +63,9 @@ pub struct OrderData {
     pub ymd: i32,
 }
 
-impl From<&Model> for OrderData {
+impl From<&Model> for ApiData {
     fn from(d: &Model) -> Self {
-        OrderData {
+        ApiData {
             id: d.id,
             order_id: d.order_id,
             schedule_id: d.schedule_id,
@@ -117,9 +107,9 @@ impl From<&Model> for OrderData {
 }
 
 
-impl From<Model> for OrderData {
+impl From<Model> for ApiData {
     fn from(d: Model) -> Self {
-        OrderData {
+        ApiData {
             id: d.id,
             order_id: d.order_id,
             schedule_id: d.schedule_id,
